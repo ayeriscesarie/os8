@@ -6,6 +6,7 @@ import sqlite3
 import stat
 import threading
 import time
+
 from pathlib import Path
 
 import pytest
@@ -225,10 +226,12 @@ def test_chmod_chown_utimens_and_statfs(fs: SQLiteFS):
     assert stat.S_ISREG(attr["st_mode"])
     assert stat.S_IMODE(attr["st_mode"]) == 0o750
 
+    original_gid = fs.getattr("/meta.txt")["st_gid"]
+
     assert fs.chown("/meta.txt", 1001, -1) == 0
     attr = fs.getattr("/meta.txt")
     assert attr["st_uid"] == 1001
-    assert attr["st_gid"] == os.getgid()
+    assert attr["st_gid"] == original_gid
 
     assert fs.chown("/meta.txt", -1, 2002) == 0
     attr = fs.getattr("/meta.txt")
