@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from fuse import FUSE, FuseOSError, Operations, fuse_get_context
 
 from database import CHUNK_SIZE, Database, normalize_path, parent_path
-
+MAX_FILE_SIZE = 8 * 1024 * 1024  
 
 class SQLiteFS(Operations):
     def __init__(self, database: Database) -> None:
@@ -141,6 +141,8 @@ class SQLiteFS(Operations):
         self, path: str, data: bytes, offset: int, fh: Optional[int] = None
     ) -> int:
         norm = normalize_path(path)
+        if offset + len(data) > MAX_FILE_SIZE:
+            raise FuseOSError(errno.EFBIG)
         entry = self._require_entry(norm)
         if stat.S_ISDIR(int(entry["mode"])):
             raise FuseOSError(errno.EISDIR)
