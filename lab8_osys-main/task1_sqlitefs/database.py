@@ -45,11 +45,20 @@ class Database:
         self.db_path = db_path
         self.chunk_size = chunk_size
         self.lock = threading.Lock()
+
+        conn = sqlite3.connect(self.db_path)
+        try:
+            conn.execute("PRAGMA journal_mode = WAL;")
+            conn.execute("PRAGMA busy_timeout = 5000;")
+        finally:
+            conn.close()
+
         self._init_db()
 
     @contextmanager
     def _transaction(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self.db_path)
+        conn.execute("PRAGMA busy_timeout = 5000;")
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
         try:
