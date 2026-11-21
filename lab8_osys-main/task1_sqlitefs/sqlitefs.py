@@ -251,6 +251,8 @@ class SQLiteFS(Operations):
     def truncate(self, path: str, length: int, fh: Optional[int] = None) -> int:
         """Truncate or zero-extend a regular file to `length` bytes."""
         norm = normalize_path(path)
+        if length > MAX_FILE_SIZE:
+            raise FuseOSError(errno.EFBIG)
         entry = self._require_entry(norm)
         if stat.S_ISDIR(int(entry["mode"])):
             raise FuseOSError(errno.EISDIR)

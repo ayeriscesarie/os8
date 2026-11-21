@@ -501,3 +501,22 @@ def test_fuse_context_and_cli_entrypoint(
     assert captured["kwargs"]["foreground"] is True
     assert captured["kwargs"]["allow_other"] is True
     assert captured["kwargs"]["nothreads"] is False
+
+def test_write_file_size_limit(fs: SQLiteFS):
+    fs.create("/limit.bin", 0o644)
+
+    assert fs.write("/limit.bin", b"A" * sqlitefs_mod.MAX_FILE_SIZE, 0) == sqlitefs_mod.MAX_FILE_SIZE
+
+    with pytest.raises(FuseOSError) as exc:
+        fs.write("/limit.bin", b"B", sqlitefs_mod.MAX_FILE_SIZE)
+
+    _assert_fuse_errno(exc, errno.EFBIG)
+
+
+def test_truncate_file_size_limit(fs: SQLiteFS):
+    fs.create("/limit_truncate.bin", 0o644)
+
+    with pytest.raises(FuseOSError) as exc:
+        fs.truncate("/limit_truncate.bin", sqlitefs_mod.MAX_FILE_SIZE + 1)
+
+    _assert_fuse_errno(exc, errno.EFBIG)
